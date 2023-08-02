@@ -1,0 +1,86 @@
+// ... PREVIOUS CODE ...
+
+// API endpoint to insert images by the testId
+app.post('/api/insertImages/:testId', upload.array('images', 5), (req, res) => {
+  const testId = req.params.testId;
+  const images = req.files.map((file) => file.filename);
+
+  const insertQuery = `INSERT INTO ${test1Table} (images, testId) VALUES ?`;
+
+  const imageValues = images.map((image) => [image, testId]);
+
+  connection.query(insertQuery, [imageValues], (error, results) => {
+    if (error) {
+      console.error('Error inserting images:', error);
+      return res.status(500).json({ error: 'Error inserting images' });
+    }
+
+    console.log('Images inserted successfully');
+    return res.status(200).json({ message: 'Images inserted successfully' });
+  });
+});
+
+// ... REST OF THE CODE ...
+
+// Start the server
+const port = 3000; // or any other port you prefer
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
+
+
+
+i have two table in first table i have three filed named id , name and email and in second table i have three filed named id , images , and testId  i want to delete a particular image from the image set that are stored in first table 
+
+
+const fetchAllData = (req, res) => {
+  try {
+    const sql = `SELECT username, email FROM test`;
+
+    con.query(sql, (err, result) => {
+      if (err) {
+        res.status(500).json({ err: 'Error while getting the data ', error: err });
+      } else {
+        if (result.length === 0) {
+          res.status(404).json({ err: 'Data not found ' });
+        } else {
+          const Data = [];
+
+          result.forEach((row) => {
+            const userData = {
+              username: row.username,
+              email: row.email,
+              images: []
+            };
+
+            const imagesSql = `SELECT images FROM test1 WHERE testId = ${row.id}`;
+            con.query(imagesSql, (err, imagesResult) => {
+              if (!err) {
+                imagesResult.forEach((imageRow) => {
+                  userData.images.push(imageRow.images);
+                });
+              }
+
+              Data.push(userData);
+
+              if (Data.length === result.length) {
+                return res.status(200).json({ Data: Data });
+              }
+            });
+          });
+        }
+      }
+    });
+  } catch (err) {
+    console.error('Error ', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
+  //  DELETE FROM test
+            // WHERE (username, email, images) IN (
+            //     SELECT test.username, test.email, test1.images
+            //     FROM test
+            //     INNER JOIN test1 ON test.id = test1.testId
+            //     WHERE test1.images = ?)`

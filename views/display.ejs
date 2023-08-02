@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Display</title>
+</head>
+<body>
+    <div class="container">
+        <form action="/" method="post">
+            <input type="text" name ="name" placeholder="name"><br><br>
+            <input type="email"  name = "email" placeholder="email"><br><br>
+            <input type="submit" value="submit">
+
+
+        </form> 
+
+    </div>
+           <table> 
+         <tr>
+            <th> id</th>
+            <th> Name</th>
+            <th> Email</th>
+        </tr>   
+           
+
+           <% if(test.length > 0){ %>
+        
+        <% for (var i=0; i<test.length ; i++){ %>
+            
+        <tr>
+            <td> <%= test[i].id %></td>
+            <td> <%= test[i].username %></td>
+            <td> <%= test[i].email %></td>
+        </tr>
+    
+          <% } %>
+               <% } else { %>
+                <h1> DATA NOT FOUND </h1>
+   <% } %>
+</table>
+</body> 
+</html>
