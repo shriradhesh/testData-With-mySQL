@@ -1,56 +1,84 @@
 const express= require('express')
 const app = express()
+const session = require('express-session')
+const passPort = require('passport')
+const GoogleStrategy = require('passport-google-oauth').OAuth2Strategy
+const GOOGLE_CLIENT_ID = "929356021478-kdclp70itl56jt75atvdjegldn6pqi8e.apps.googleusercontent.com"
+const GOOGLE_CLIENT_SECRET = "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"
 require('dotenv').config()
-const bodyparser = require('body-parser')
-const ejs = require('ejs')
-
-var con = require('./connection')
 const bodyParser = require('body-parser')
+const ejs = require('ejs')
 const testRoute = require('./routes/testRoute')
 
+                // DATABASE CONNECTION 
+var con = require('./connection')
+const passport = require('passport')
+
+
+
+                // view engine 
 
 app.set('view engine','ejs')
-// middleware
+
+                    // middleware
+
+app.use(session({
+    resave : false,
+    saveUninitialized : true,
+    secret : 'SECRET'
+}))
 
 app.use(bodyParser.json())
-app.use(bodyparser.urlencoded({extended:true}))
+app.use(bodyParser.urlencoded({extended:true}))
+
+var userProfile;
+app.use(passport.initialize());
+app.use(passPort.session())
 
 // route
 app.use('/api', testRoute)
+
 app.get('/',(req,res)=>{
-    res.sendFile(__dirname +'/form.html')
+    res.render('login')
 })
 
 
-app.post('/', function (req, res) {
-var { name , email } = req.body
-    var emailcheck = 'SELECT * FROM test WHERE email = ?';
-    con.query(emailcheck, [email], function (err, result) {
-        if (err) throw err;
-
-        if (result.length > 0) {
-            
-            res.status(409).send('Email already exists in the database.');
-        } else {
-            
-            var insertSql = 'INSERT INTO test (username, email) VALUES (?, ?)';
-            con.query(insertSql, [name, email], function (err, result) {
-                if (err) throw err;
-                console.log('Data Uploaded');
-                res.redirect('/');
-            });
-        }
-    });
-});
-
-app.get('/',(req,res)=>{
-    var sql = 'SELECT * FROM test';
-    con.query(sql , function(err , result){
-        if(err) throw err
-
-res.render('display' , { test : result})
-    })
+app.get('/success', (req,res)=>{
+    res.send(userProfile)
 })
+
+app.get('/error', (req,res)=>{
+    res.send("error logging in")
+})
+
+  passport.serializeUser((user,cb)=>{
+    cb(null , user)
+  })
+
+  passPort.deserializeUser((obj , cb)=>{
+    cb(null , obj)
+  })
+
+passport.use(new GoogleStrategy({
+clientID : GOOGLE_CLIENT_ID,
+clientSecret : GOOGLE_CLIENT_SECRET,
+callbackURL : "http://localhost:3500/auth/google/callback"
+}, (accessToken , refreshToken , profile , done)=>{
+    userProfile = profile;
+    return done(null, userProfile)
+}))
+
+app.get('/auth/google',passport.authenticate('google',{ 
+     scope : ['profile','email' ]}))
+
+app.get('/auth/google/callback', passPort.authenticate('google', { failureRedirect : '/error'}),
+ (req,res)=>{
+    res.redirect('/success')
+ })
+
+
+
+
 
 app.listen(3500 ,()=>{
     console.log('server is running at port : 3500');

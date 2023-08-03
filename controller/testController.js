@@ -293,8 +293,8 @@ const insert_data = function (req, res) {
         // Api for term and condition 
 
         const termAndCondition = (req, res) => {
-          const data = req.body
-          
+          const data = req.body;
+      
           var updateQuery = `UPDATE term_and_condition SET description = ? , heading = ?`;
           var updateValues = [data.description, data.heading];
       
@@ -302,10 +302,8 @@ const insert_data = function (req, res) {
               if (err) {
                   console.error('Error updating terms', err);
                   return res.status(500).json({ err: 'An error occurred while updating term' });
-              }
-              
-              else {
-                  if (result.length === 0) {
+              } else {
+                  if (result.affectedRows === 0) {
                       var insertQuery = `INSERT INTO term_and_condition(heading, description) VALUES (?, ?)`;
                       var insertValues = [data.heading, data.description];
       
@@ -314,13 +312,13 @@ const insert_data = function (req, res) {
                               console.error('There is an error while inserting', err);
                               return res.status(500).json({ err: 'Error while inserting the term' });
                           } else {
-                              const insertedId = result.insertId; // ID of the inserted data
-                              return res.status(200).json({ message: 'Term inserted/updated successfully', id: insertedId });
+                              const id = result.insertId; 
+                              return res.status(200).json({ message: 'Term inserted successfully', id : id});
                           }
                       });
                   } else {
-                      const updatedId = result.insertId; // ID of the updated data
-                      return res.status(200).json({ message: 'Term updated successfully', id: updatedId });
+                      
+                      return res.status(200).json({ message: 'Term updated successfully' , success: true });
                   }
               }
           });
