@@ -2,6 +2,12 @@ const con  = require('../connection')
 const upload = require ('../uploadImage')
 const multer = require('multer')
 
+
+
+
+
+
+
                                         /* --> for test Table <-- */
 // insert data
 
@@ -17,7 +23,7 @@ const insert_data = function (req, res) {
             }
             else
             {
-                var sql = 'INSERT INTO test (username, testId , email) VALUES (?, ? , ?)';
+                var sql = 'INSERT INTO test (username , email) VALUES (?,?)';
   
                 con.query(sql, [name, email], function (err, result) {
                  if (err) {
@@ -33,6 +39,7 @@ const insert_data = function (req, res) {
 
         })
      } 
+             
     
 
      // get all DATA
@@ -282,4 +289,45 @@ const insert_data = function (req, res) {
           }
         }
 
-      module.exports = { insert_data , allData , getData , updateData , deleteData , insert , insertImages , fetchData , fetchAllData , deleteImage}
+
+        // Api for term and condition 
+
+        const termAndCondition = (req, res) => {
+          const data = req.body
+          
+          var updateQuery = `UPDATE term_and_condition SET description = ? , heading = ?`;
+          var updateValues = [data.description, data.heading];
+      
+          con.query(updateQuery, updateValues, (err, result) => {
+              if (err) {
+                  console.error('Error updating terms', err);
+                  return res.status(500).json({ err: 'An error occurred while updating term' });
+              }
+              
+              else {
+                  if (result.length === 0) {
+                      var insertQuery = `INSERT INTO term_and_condition(heading, description) VALUES (?, ?)`;
+                      var insertValues = [data.heading, data.description];
+      
+                      con.query(insertQuery, insertValues, (err, result) => {
+                          if (err) {
+                              console.error('There is an error while inserting', err);
+                              return res.status(500).json({ err: 'Error while inserting the term' });
+                          } else {
+                              const insertedId = result.insertId; // ID of the inserted data
+                              return res.status(200).json({ message: 'Term inserted/updated successfully', id: insertedId });
+                          }
+                      });
+                  } else {
+                      const updatedId = result.insertId; // ID of the updated data
+                      return res.status(200).json({ message: 'Term updated successfully', id: updatedId });
+                  }
+              }
+          });
+      };
+      
+      
+      
+      
+      
+      module.exports = { insert_data , allData , getData , updateData , deleteData , insert , insertImages , fetchData , fetchAllData , deleteImage , termAndCondition}

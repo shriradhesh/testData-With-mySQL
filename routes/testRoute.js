@@ -35,4 +35,8 @@ router.get('/fetchAllData', testController.fetchAllData)
 
 router.delete('/deleteImage/:id/:imageId', testController.deleteImage)
 
+// API for Term and condition 
+
+router.post('/termAndCondition', testController.termAndCondition)
+
 module.exports = router
