@@ -39,4 +39,8 @@ router.delete('/deleteImage/:id/:imageId', testController.deleteImage)
 
 router.post('/termAndCondition', testController.termAndCondition)
 
+
+
+//api forcheck and toggle status
+  router.post('/checkAndToggleStatus/:id',testController.checkAndToggleStatus)
 module.exports = router

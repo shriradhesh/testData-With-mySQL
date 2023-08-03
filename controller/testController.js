@@ -12,7 +12,7 @@ const multer = require('multer')
 // insert data
 
 const insert_data = function (req, res) {
-   var  { name , email  } = req.body
+   var  { name , email , status} = req.body
     var emailCheck = 'SELECT COUNT (*) AS count FROM test WHERE email = ?'
      con.query(emailCheck , [email], function (err , result){
         if(err) throw err
@@ -23,9 +23,9 @@ const insert_data = function (req, res) {
             }
             else
             {
-                var sql = 'INSERT INTO test (username , email) VALUES (?,?)';
+                var sql = 'INSERT INTO test (username , email , status) VALUES (?,?,?)';
   
-                con.query(sql, [name, email], function (err, result) {
+                con.query(sql, [name, email,status], function (err, result) {
                  if (err) {
                    res.status(500).json({ err: 'there is an Error  ' , err});
                  } else {
@@ -185,7 +185,7 @@ const insert_data = function (req, res) {
                       return res.status(400).json({ error : 'Invalid Id'})
       
                     }
-                       const sql = `SELECT test.username, test.email , test1.images
+                       const sql = `SELECT test.username, test.email , test.sttaus , test1.images
                        FROM test
                        INNER JOIN test1 ON test.id = test1.testId
                        WHERE test.id = ?`;
@@ -200,7 +200,7 @@ const insert_data = function (req, res) {
                           }
                           else{
                             const images = result.map(row => row.images);
-                            res.status(200).json({ data : { username: result[0].username , email : result[0].email , images}})
+                            res.status(200).json({ data : { username: result[0].username , email : result[0].email , status: result[0].status, images}})
                           }
                         }
                       })
@@ -214,7 +214,7 @@ const insert_data = function (req, res) {
         
           const fetchAllData = (req, res) => {
             try {
-                const sql = `SELECT test.username, test.email, test1.images
+                const sql = `SELECT test.username, test.email,test.status, test1.images
                              FROM test
                              INNER JOIN test1 ON test.id = test1.testId `;
           
@@ -232,7 +232,8 @@ const insert_data = function (req, res) {
                                     Data[row.username] = {
                                         username: row.username,
                                         email: row.email,
-                                        images: []
+                                        images: [],
+                                        status : row.status
                                     };
                                 }
         
@@ -290,7 +291,7 @@ const insert_data = function (req, res) {
         }
 
 
-        // Api for term and condition 
+        // Api for term and condition for ( TERM AND CONDITION TABLE )
 
         const termAndCondition = (req, res) => {
           const data = req.body;
@@ -325,7 +326,50 @@ const insert_data = function (req, res) {
       };
       
       
+       // API FOR CHECK STATUS
+           
+       
+       const checkAndToggleStatus = (req, res) => {
+        const id = req.params.id
       
+        const sqlSelect = 'SELECT status FROM test WHERE id = ?'
+        const sqlUpdate = 'UPDATE test SET status = ? WHERE id = ?'
       
+        con.query(sqlSelect, [id], (err, result) => {
+          if (err) {
+            console.error('Error while checking the status:', err)
+            res.status(404).json({ error : err })
+            return;
+          }      
+
+          if (result.length > 0) {
+            const currentStatus = result[0].status
+            const newStatus = 1 - currentStatus
       
-      module.exports = { insert_data , allData , getData , updateData , deleteData , insert , insertImages , fetchData , fetchAllData , deleteImage , termAndCondition}
+            
+            con.query(sqlUpdate, [newStatus, id], (err, result) => {
+              if (err) {
+                console.error('Error while updating status', err)
+                res.status(500).json({ error: 'Internal server error' })
+              } else {
+                   
+                res.status(200).json({ success : true , message : ' your Status has been changed '})
+              }
+            })
+          } else {
+            res.status(404).json({ error: 'Test ID not found' })
+          }
+        })
+      }            
+           
+           
+           
+           
+           
+           
+           
+          
+           
+      
+          
+      module.exports = { insert_data , allData , getData , updateData , deleteData , insert , insertImages , fetchData , fetchAllData , deleteImage , termAndCondition, checkAndToggleStatus}

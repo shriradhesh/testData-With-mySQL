@@ -1,24 +1,21 @@
 // ... PREVIOUS CODE ...
 
-// API endpoint to insert images by the testId
-app.post('/api/insertImages/:testId', upload.array('images', 5), (req, res) => {
-  const testId = req.params.testId;
-  const images = req.files.map((file) => file.filename);
 
-  const insertQuery = `INSERT INTO ${test1Table} (images, testId) VALUES ?`;
+                    
 
-  const imageValues = images.map((image) => [image, testId]);
 
-  connection.query(insertQuery, [imageValues], (error, results) => {
-    if (error) {
-      console.error('Error inserting images:', error);
-      return res.status(500).json({ error: 'Error inserting images' });
-    }
 
-    console.log('Images inserted successfully');
-    return res.status(200).json({ message: 'Images inserted successfully' });
-  });
-});
+
+
+
+
+
+
+
+
+
+Create an API to show the user's status whether the user is active or inactive If user's status is 1 then active and 0 then inactive And in that if you hit API on postman then the active status becomes inactive and if you hit again API on postman then the inactive status becomes active
+
 
 // ... REST OF THE CODE ...
 
@@ -29,3 +26,5 @@ app.listen(port, () => {
 });
 
 
+
+        
