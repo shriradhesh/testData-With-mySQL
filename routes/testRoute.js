@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const testController = require('../controller/testController')
 const multer = require ('multer')
+
 const upload = require ('../uploadImage')
 require('dotenv').config()
                              /* ---->   API   <--- */
