@@ -29,4 +29,84 @@ app.listen(port, () => {
 agar user same id ki email dalta hai toh email already exist na btaaye par agar user dusri email daalta hai jo ki koi dusra user id already occupy kiya hua hai toh email already exist with different user id btaaye 
 
 
+
+                                    // update query 
+const bcrypt = require('bcrypt');
+
+const updateData = async (req, res) => {
+  try {
+    const dataId = req.params.id;
+    const newData = req.body;
+
+    // Validate if the newPassword field is provided in the request body
+    if (!newData.newPassword) {
+      return res.status(400).json({ error: 'New password is required', success: false });
+    }
+
+    const checkId = 'SELECT id FROM test WHERE id = ?';
+    const checkEmail = 'SELECT email FROM test WHERE id = ?';
+    const checkEmailQuery = 'SELECT id FROM test WHERE email = ?';
+    const checkUsernameQuery = 'SELECT id FROM test WHERE username = ?';
+    const updateSql = 'UPDATE test SET ? WHERE id = ?';
+
+    const [checkIdResults, checkEmailResults, checkUsernameResults] = await Promise.all([
+      executeQuery(checkId, [dataId]),
+      executeQuery(checkEmail, [dataId]),
+      executeQuery(checkUsernameQuery, [newData.username]),
+    ]);
+
+    if (checkIdResults.length === 0) {
+      return res.status(400).json({ error: 'test id does not exist', success: false });
+    }
+
+    if (checkEmailResults.length === 0) {
+      return res.status(404).json({ error: 'Email not found', success: false });
+    }
+
+    const existingEmail = checkEmailResults[0].email;
+
+    if (newData.email && newData.email === existingEmail) {
+      // Hash the new password before updating
+      if (newData.newPassword) {
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(newData.newPassword, saltRounds);
+        newData.password = hashedPassword;
+        delete newData.newPassword; // Remove newPassword from newData to avoid updating it in plain text
+      }
+
+      await executeQuery(updateSql, [newData, dataId]);
+      return res.status(200).json({ message: 'Data updated successfully', success: true });
+    } else {
+      if (checkUsernameResults.length > 0) {
+        return res.status(400).json({ error: 'Username already exists', success: false });
+      }
+
+      const emailRows = await executeQuery(checkEmailQuery, [newData.email]);
+
+      if (emailRows.length > 0) {
+        return res.status(400).json({ error: 'Email already exists', success: false });
+      }
+
+      // Hash the new password before updating
+      if (newData.newPassword) {
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(newData.newPassword, saltRounds);
+        newData.password = hashedPassword;
+        delete newData.newPassword; // Remove newPassword from newData to avoid updating it in plain text
+      }
+
+      await executeQuery(updateSql, [newData, dataId]);
+      return res.status(200).json({ message: 'Data updated successfully', success: true });
+    }
+  } catch (err) {
+    return res.status(500).json({ error: 'Error while updating the data', success: false, error: err });
+  }
+};
+
+// Assuming 'con' is the database connection object and 'con.query' is promisified.
+const executeQuery = (query, params) => {
+  return con.query(query, params);
+};
+
+
         
