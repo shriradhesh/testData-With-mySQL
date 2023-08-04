@@ -12,33 +12,29 @@ const multer = require('multer')
 // insert data
 
 const insert_data = function (req, res) {
-   var  { name , email , status} = req.body
-    var emailCheck = 'SELECT COUNT (*) AS count FROM test WHERE email = ?'
-     con.query(emailCheck , [email], function (err , result){
-        if(err) throw err
-        else{
-            if(result[0].count > 0)
-            {
-                res.status(400).json({ err : 'Email already exists'})
-            }
-            else
-            {
-                var sql = 'INSERT INTO test (username , email , status) VALUES (?,?,?)';
-  
-                con.query(sql, [name, email,status], function (err, result) {
-                 if (err) {
-                   res.status(500).json({ err: 'there is an Error  ' , err});
-                 } else {
-                   res.status(200).json({ message : ' Data uploaded Successfully', })
-                  
-                 }
-               });
-             }
-           
-            }
+  const { username, email, status } = req.body;
+console.log(username);
+  const emailCheck = 'SELECT COUNT(*) AS count FROM test WHERE email = ?';
+  con.query(emailCheck, [email], function (err, result) {
+      if (err) {
+          throw err;
+      } else {
+          if (result[0].count > 0) {
+              res.status(400).json({ err: 'Email already exists' });
+          } else {
+              const sql = 'INSERT INTO test (username, email, status) VALUES (?, ?, ?)';
+              con.query(sql, [username, email, status], function (err, result) {
+                  if (err) {
+                      res.status(500).json({ err: 'There is an Error', error: err });
+                  } else {
+                      res.status(200).json({ message: 'Data uploaded Successfully' , success : true });
+                  }
+              });
+          }
+      }
+  });
+};
 
-        })
-     } 
              
     
 
@@ -50,7 +46,7 @@ const insert_data = function (req, res) {
               if (err) {
                 res.status(500).json({ err: 'Error while getting all data', error: err });
               } else {
-                res.status(200).json({ Data: result });
+                res.status(200).json({ message : ' ALL user data ' , success : true });
               }
             });
           }
@@ -60,23 +56,23 @@ const insert_data = function (req, res) {
               const dataId = req.params.id
 
               if(!Number.isInteger(+dataId) || +dataId <= 0){
-                return res.status(400).json({ error : 'Invalid Data Id'})
+                return res.status(400).json({ error : 'Invalid Data Id', success : false})
 
               }
               const sql = `SELECT * FROM test WHERE id = ${dataId}`;
               con.query(sql , (err, result)=>{
                 if(err)
                 {
-                  res.status(500).json({ error : 'Error while getting Data', error : err})
+                  res.status(500).json({ error : 'Error while getting Data', error : err ,success : false })
                 }
                 else{
                   if(result.length === 0)
                   {
-                    res.status(404).json({ error : 'Data not found'})
+                    res.status(404).json({ error : 'Data not found' , success : false })
             
                   }
                   else{
-                    res.status(200).json({ Data : result[0]})
+                    res.status(200).json({ message : 'Data with user ID ' , success : true })
                   }
                 }
     
@@ -84,27 +80,64 @@ const insert_data = function (req, res) {
              }
   
 
-    //update Data by Id                 
+    //update Data by Id                
 
                       
     const updateData = (req, res) => {
-      var dataId = req.params.id;   
-      
-      var newData = req.body
-
+      const dataId = req.params.id;
+      const newData = req.body;
+    
       if (!Number.isInteger(+dataId) || +dataId <= 0) {
-        return res.status(400).json({ error: 'Invalid Data Id' });
+        return res.status(400).json({ error: 'Invalid Data Id', success: false });
       }
-        const sql = `UPDATE test SET ? WHERE id = ${dataId}`
-      con.query(sql, newData , (err, result) => {
+              // check for email that exist in given id 
+    
+      const checkEmail = `SELECT email FROM test WHERE id = ${dataId}`;
+      con.query(checkEmail, (err, rows) => {
         if (err) {
-        
-          res.status(500).json({ error: 'Error while updating data' , error : err });
+          return res.status(500).json({ error: 'Error while fetching the existing email', success: false, error: err });
+        }
+        if (rows.length === 0) {
+          return res.status(404).json({ error: 'Email not found', success: false });
+        }                 
+                // if given email matchs with exist email in given id then update data 
+        const existingEmail = rows[0].email;
+    
+        if (newData.email && newData.email === existingEmail) {
+           const updateSql = `UPDATE test SET ? WHERE id = ${dataId}`;
+          con.query(updateSql, newData, (err, result) => {
+            if (err) {
+              return res.status(500).json({ error: 'Error while updating the data', success: false, error: err });
+            }
+            return res.status(200).json({ message: 'Data updated successfully', success: true });
+          });
+                 // Email does not match, check for duplicate email
+          
         } else {
-              res.status(200).json({ message : 'Data updated Successfully'})
+              const checkEmailQuery = `SELECT id FROM test WHERE email = '${newData.email}'`;
+          con.query(checkEmailQuery, (err, rows) => {
+            if (err) {
+              return res.status(500).json({ error: 'Error while checking email existence', success: false, error: err });
+            }
+                    
+            if (rows.length > 0) {
+              return res.status(400).json({ error: 'Email already exists', success: false });
+            }
+    
+            // Update the data with the new values
+            const updateSql = `UPDATE test SET ? WHERE id = ${dataId}`;
+            con.query(updateSql, newData, (err, result) => {
+              if (err) {
+                return res.status(500).json({ error: 'Error while updating the data', success: false, error: err });
+              }
+              return res.status(200).json({ message: 'Data updated successfully', success: true });
+            });
+          });
         }
       });
     };
+    
+    
     
 
        // Delete Data by ID 
@@ -112,15 +145,15 @@ const insert_data = function (req, res) {
        const deleteData = (req,res) =>{
             var dataId = req.params.id;
             if (!Number.isInteger(+dataId) || +dataId <= 0) {
-              return res.status(400).json({ error: 'Invalid Data Id' });
+              return res.status(400).json({ error: 'Invalid Data Id',success: false});
             }              
           
            const sql = `DELETE FROM test WHERE id = ${dataId}`;
         con.query(sql, (err, result) => {
           if (err) {
-            res.status(500).json({ error: 'Error while deleting Data', error: err });
+            res.status(500).json({ error: 'Error while deleting Data', success: false ,error: err });
           } else {
-            res.status(200).json({ message: 'Data deleted successfully' });
+            res.status(200).json({ message: 'Data deleted successfully', success: true });
           }
         });
       }
@@ -130,7 +163,7 @@ const insert_data = function (req, res) {
           const insert= (req, res) => {
             try {
               if (!req.file) {
-                res.status(400).json({ error: 'Please upload an image file.' });
+                res.status(400).json({ error: 'Please upload an image file.' , success: false});
                 return;
               }          
               const imagePath = req.file.path;    
@@ -139,10 +172,10 @@ const insert_data = function (req, res) {
               const sql = `INSERT INTO test1 (images) VALUES ('${imagePath}')`;
               con.query(sql);
           
-              res.status(200).json({ message: 'Data inserted successfully!' });
+              res.status(200).json({ message: 'Data inserted successfully!' , success: true });
             } catch (err) {
               console.error('Error inserting Data:', err);
-              res.status(500).json({ error: 'An error occurred while inserting the Data.' });
+              res.status(500).json({ error: 'An error occurred while inserting the Data.' , success: false });
             }
           };
           
@@ -158,7 +191,7 @@ const insert_data = function (req, res) {
                 await con.query(checkId, [id], (err, checkResult) => {
                     if (err) throw err;
                     if (checkResult.length === 0) {
-                        return res.status(400).json({ error: '"test" id does not exist' });
+                        return res.status(400).json({ error: '"test" id does not exist' , success: false });
                     }
                     else {
                         images.forEach(image => {
@@ -167,13 +200,13 @@ const insert_data = function (req, res) {
         
                             })
                         });
-                        return res.status(200).json({ message: 'Image uploaded successfully' });
+                        return res.status(200).json({ message: 'Image uploaded successfully' , success: true });
                     }
         
                 });
             } catch (err) {
                 console.error(err);
-                return res.status(500).json({ error: 'Error while uploading images' });
+                return res.status(500).json({ error: 'Error while uploading images' , success: false });
             }
         }
     // get data from table 1 and table 2
@@ -182,7 +215,7 @@ const insert_data = function (req, res) {
                      const id = req.params.id;
 
                      if(!Number.isInteger(+id) || +id <= 0){
-                      return res.status(400).json({ error : 'Invalid Id'})
+                      return res.status(400).json({ error : 'Invalid Id' , success: false})
       
                     }
                        const sql = `SELECT test.username, test.email , test.sttaus , test1.images
@@ -191,12 +224,12 @@ const insert_data = function (req, res) {
                        WHERE test.id = ?`;
                       con.query(sql , [id] ,(err , result)=>{
                         if(err){
-                          res.status(500).json({ err :' Error while getting the data',error : err})
+                          res.status(500).json({ err :' Error while getting the data',success: false ,error : err})
                         }
                         else{
                           if(result.length == 0)
                           {
-                            res.status(404).json({ err : 'Data not found'})
+                            res.status(404).json({ err : 'Data not found' , success: false})
                           }
                           else{
                             const images = result.map(row => row.images);

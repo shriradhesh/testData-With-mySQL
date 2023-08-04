@@ -26,5 +26,7 @@ app.listen(port, () => {
 });
 
 
+agar user same id ki email dalta hai toh email already exist na btaaye par agar user dusri email daalta hai jo ki koi dusra user id already occupy kiya hua hai toh email already exist with different user id btaaye 
+
 
         
