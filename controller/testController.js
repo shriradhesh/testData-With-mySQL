@@ -80,64 +80,65 @@ const insert_data = function (req, res) {
   
     //update Data by Id  
               const updateData = (req, res) => {
-                const dataId = req.params.id;
-                const newData = req.body;
-                const checkId = 'SELECT id FROM test WHERE id = ?';
-                
-                con.query(checkId, [dataId], (err, checkResult) => {
-                  if (err) {
-                    return res.status(500).json({ error: 'Error while checking ID existence', success: false, error: err });
-                  }
-                  
-                  if (checkResult.length === 0) {
-                    return res.status(400).json({ error: 'test id does not exist', success: false });
-                  } else {
-                    const checkEmail = `SELECT email FROM test WHERE id = ?`;
-              
-                    con.query(checkEmail, [dataId], (err, rows) => {
-                      if (err) {
-                        return res.status(500).json({ error: 'Error while fetching the existing email', success: false, error: err });
-                      }
-              
-                      if (rows.length === 0) {
-                        return res.status(404).json({ error: 'Email not found', success: false });
-                      }
-              
-                      const existingEmail = rows[0].email;
-              
-                      if (newData.email && newData.email === existingEmail) {
-                        const updateSql = 'UPDATE test SET ? WHERE id = ?';
-                        con.query(updateSql, [newData, dataId], (err, result) => {
-                          if (err) {
-                            return res.status(500).json({ error: 'Error while updating the data', success: false, error: err });
-                          }
-                          return res.status(200).json({ message: 'Data updated successfully', success: true });
-                        });
-                      } else {
-                        const checkEmailQuery = 'SELECT id FROM test WHERE email = ?';
-                        con.query(checkEmailQuery, [newData.email], (err, rows) => {
-                          if (err) {
-                            return res.status(500).json({ error: 'Error while checking email existence', success: false, error: err });
-                          }
-              
-                          if (rows.length > 0) {
-                            return res.status(400).json({ error: 'Email already exists', success: false });
-                          }
-              
-                          const updateSql = 'UPDATE test SET ? WHERE id = ?';
-                          con.query(updateSql, [newData, dataId], (err, result) => {
-                            if (err) {
-                              return res.status(500).json({ error: 'Error while updating the data', success: false, error: err });
-                            }
-                            return res.status(200).json({ message: 'Data updated successfully', success: true });
-                          });
-                        });
-                      }
-                    });
-                  }
-                });
-              };
-   
+      const dataId = req.params.id;
+      const newData = req.body;
+      const checkId = 'SELECT id, email FROM test WHERE id = ?';
+    
+      con.query(checkId, [dataId], (err, checkResult) => {
+        if (err) {
+          return res.status(500).json({ error: 'Error while checking ID existence', success: false, error: err });
+        }
+    
+        if (checkResult.length === 0) {
+          return res.status(400).json({ error: 'test id does not exist', success: false });
+        }
+    
+        const existingEmail = checkResult[0].email;
+    
+        if (newData.email && newData.email !== existingEmail) {
+          const checkEmailQuery = 'SELECT id FROM test WHERE email = ?';
+          con.query(checkEmailQuery, [newData.email], (err, rows) => {
+            if (err) {
+              return res.status(500).json({ error: 'Error while checking email existence', success: false, error: err });
+            }
+    
+            if (rows.length > 0) {
+              return res.status(400).json({ error: 'Email already exists', success: false });
+            }    
+            updateDataWithPassword();
+          });
+        }
+         else {
+          updateDataWithPassword();
+        }
+      });
+    
+      function updateDataWithPassword() {
+        if (newData.password) {
+          // Encrypt the password before updating
+          bcrypt.hash(newData.password, 10, (err, hashedPassword) => {
+            if (err) {
+              return res.status(500).json({ error: 'Error while encrypting password', success: false, error: err });
+            }    
+            newData.password = hashedPassword;
+            updateDatabase();
+          });
+        } 
+        else {
+          updateDatabase();
+        }
+      }
+    
+      function updateDatabase() {
+        const updateSql = 'UPDATE test SET ? WHERE id = ?';
+        con.query(updateSql, [newData, dataId], (err, result) => {
+          if (err) {
+            return res.status(500).json({ error: 'Error while updating the data', success: false, error: err });
+          }
+          return res.status(200).json({ message: 'Data updated successfully', success: true });
+        });
+      }
+    };
        // Delete Data by ID 
 
        const deleteData = (req,res) =>{
